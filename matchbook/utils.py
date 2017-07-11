@@ -1,19 +1,6 @@
 
-import sys
 import datetime
-import logging
 from matchbook.exceptions import ApiError
-
-LOG_FORMAT = '%(asctime)s - %(levelname)s - %(module)s - %(funcName)s - %(message)s'
-logging.basicConfig(
-    level=logging.DEBUG,
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ],
-    format=LOG_FORMAT,
-)
-
-logger = logging.getLogger(__name__)
 
 
 def clean_time(col):

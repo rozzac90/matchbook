@@ -3,4 +3,4 @@ from mbapi.exceptions import MBError
 
 
 __title__ = 'matchbook'
-__version__ = '0.0.1'
+__version__ = '0.0.2'

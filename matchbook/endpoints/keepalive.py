@@ -3,7 +3,6 @@ import json
 
 from matchbook.endpoints.baseendpoint import BaseEndpoint
 from matchbook.exceptions import AuthError
-from matchbook.utils import logger
 
 
 class KeepAlive(BaseEndpoint):
@@ -12,14 +11,12 @@ class KeepAlive(BaseEndpoint):
         session = session or self.client.session
         response = self.request('GET', self.client.urn_main, 'security/session', data=self.data, session=session)
         if response.status_code == 200:
-            logger.info('Session Active, Session Token: %s' % self.client.session_token)
+            pass
         elif response.status_code == 401:
-            logger.info('Session Expired, Creating New Session')
             response = self.request("POST", self.client.urn_main, 'security/session', data=self.data, session=session)
             if response.status_code == 200:
                 response_json = response.json()
                 self.client.set_session_token(response_json.get('session-token'), response_json.get('user-id'))
-                logger.info('Login Successful. Session Token: {}'.format(self.client.session_token))
             else:
                 raise AuthError(response)
         else:
