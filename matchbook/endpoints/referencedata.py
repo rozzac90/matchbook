@@ -24,7 +24,7 @@ class ReferenceData(BaseEndpoint):
             response.json().get('currencies', []), resources.Currencies, date_time_sent, datetime.datetime.utcnow()
         )
 
-    def get_sports(self, status=MarketStates.All, order=SportsOrder.NameAsc, session=None):
+    def get_sports(self, status=MarketStates.All, order=SportsOrder.NameAsc, per_page=500, session=None):
         """
         Lookup all sports, filter for active only/all.
 
@@ -32,6 +32,8 @@ class ReferenceData(BaseEndpoint):
         :type status: MatchbookAPI.bin.enums.SportStatus
         :param order: order in which results are returned, default 'name asc'.
         :type order: MatchbookAPI.bin.enums.SportsOrder
+        :param per_page: no. of sports returned in a single response, Max 500. Default 20.
+        :type per_page: int
         :param session: requests session to be used.
         :type session: requests.Session
         :return: Sports that are active on the betting platform.
