@@ -15,5 +15,5 @@ $ python install matchbook
 >>> from matchbook.apiclient import APIClient
 >>> api = APIClient('username', 'password')
 >>> sport_ids = api.reference_data.get_sports()
->>> tennis_events = api.marketdata.get_events(sport_ids=[9]) 
+>>> tennis_events = api.market_data.get_events(sport_ids=[9]) 
 ```
