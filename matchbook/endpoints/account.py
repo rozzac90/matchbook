@@ -51,8 +51,6 @@ class Account(BaseEndpoint):
         """
         Get casino account balance for logged in user.
 
-        :param balance_only: retrieve only account balance info subset or not.
-        :type balance_only: bool
         :param session: requests session to be used.
         :type session: requests.Session
         :returns: Returns the casino balance for the logged-in user.

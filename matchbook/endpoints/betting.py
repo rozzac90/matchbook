@@ -88,7 +88,9 @@ class Betting(BaseEndpoint):
                     params['offers'].append({'runner-id': runner_id[i], 'side': side[i], 'stake': stake[i],
                                              'odds': odds[i]})
         else:
-            params['offers'].append({'runner-id': runner_id, 'side': side, 'stake': stake, 'odds': odds})
+            params['offers'].append(
+                {'runner-id': runner_id, 'side': side, 'stake': stake, 'odds': odds, 'temp-id': temp_id}
+            )
         method = 'offers'
         response = self.request("POST", self.client.urn_edge, method, data=params, session=session)
         date_time_received = datetime.datetime.utcnow()
@@ -122,8 +124,8 @@ class Betting(BaseEndpoint):
         :raises: MatchbookAPI.bin.exceptions.ApiError
 
          """
-        date_time_sent = datetime.datetime.utcnow()
         params = clean_locals(locals())
+        date_time_sent = datetime.datetime.utcnow()
         method = 'bets/matched/aggregated'
         response = self.request("GET", self.client.urn_edge, method, params=params, target='bets', session=session)
         date_time_received = datetime.datetime.utcnow()
@@ -151,8 +153,8 @@ class Betting(BaseEndpoint):
         :returns: Orders data
         :raises: MatchbookAPI.bin.exceptions.ApiError
         """
-        date_time_sent = datetime.datetime.utcnow()
         params = clean_locals(locals())
+        date_time_sent = datetime.datetime.utcnow()
         method = 'accounts/positions'
         response = self.request("GET", self.client.urn_edge, method, params=params, session=session)
         date_time_received = datetime.datetime.utcnow()
