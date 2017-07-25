@@ -7,7 +7,7 @@ from matchbook.endpoints.betting import Betting
 from matchbook.enums import Side, Status, AggregationType
 
 
-class AccountTest(unittest.TestCase):
+class BettingTest(unittest.TestCase):
 
     def setUp(self):
         self.client = APIClient('username', 'password')

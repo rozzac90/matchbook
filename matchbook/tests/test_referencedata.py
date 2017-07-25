@@ -4,10 +4,9 @@ import unittest.mock as mock
 
 from matchbook.apiclient import APIClient
 from matchbook.endpoints.referencedata import ReferenceData
-from matchbook.enums import Side, MarketStates, Boolean
 
 
-class AccountTest(unittest.TestCase):
+class ReferenceDataTest(unittest.TestCase):
 
     def setUp(self):
         self.client = APIClient('username', 'password')

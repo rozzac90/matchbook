@@ -7,7 +7,7 @@ from matchbook.endpoints.marketdata import MarketData
 from matchbook.enums import Side, MarketStates, Boolean
 
 
-class AccountTest(unittest.TestCase):
+class MarketDataTest(unittest.TestCase):
 
     def setUp(self):
         self.client = APIClient('username', 'password')
