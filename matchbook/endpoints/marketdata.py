@@ -56,7 +56,8 @@ class MarketData(BaseEndpoint):
         params['currency'] = self.client.currency
         if event_id:
             method = 'events/%s' % event_id
-            del_keys = ['after', 'before', 'category-ids', 'sport-ids', 'states', 'per-page', 'offset', 'tag-url-names']
+            del_keys = ['event-id', 'after', 'before', 'category-ids', 'sport-ids',
+                        'states', 'per-page', 'offset', 'tag-url-names']
             params = {k: v for k, v in params.items() if k not in del_keys}
             response = self.request("GET", self.client.urn_edge, method, params=params, session=session)
             response = response.json().get('event', response.json())
