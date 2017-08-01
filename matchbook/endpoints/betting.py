@@ -155,7 +155,7 @@ class Betting(BaseEndpoint):
         """
         params = clean_locals(locals())
         date_time_sent = datetime.datetime.utcnow()
-        method = 'accounts/positions'
+        method = 'account/positions'
         response = self.request("GET", self.client.urn_edge, method, params=params, session=session)
         date_time_received = datetime.datetime.utcnow()
         return self.process_response(
