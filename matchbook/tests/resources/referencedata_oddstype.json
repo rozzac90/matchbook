@@ -1,0 +1,7 @@
+{'odds-types': [{'odds-type': 'US', 'odds-type-id': 'US'},
+  {'odds-type': 'DECIMAL', 'odds-type-id': 'DECIMAL'},
+  {'odds-type': '%', 'odds-type-id': 'PROBABILITY'},
+  {'odds-type': 'HK', 'odds-type-id': 'HONG_KONG'},
+  {'odds-type': 'MALAY', 'odds-type-id': 'MALAY'},
+  {'odds-type': 'INDO', 'odds-type-id': 'INDONESIAN'},
+  {'odds-type': 'FRAC', 'odds-type-id': 'FRACTIONAL'}]}
