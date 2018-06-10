@@ -1,5 +1,5 @@
-import requests
 import os
+import requests
 
 from matchbook.exceptions import PasswordError
 from matchbook.enums import ExchangeType, OddsType, Currency
@@ -15,7 +15,7 @@ class BaseClient(object):
         self.username = username
         self.password = password
         self.locale = locale
-        self.url = 'https://matchbook.com'
+        self.url = 'https://www.matchbook.com'
         self.url_beta = 'https://beta.matchbook.com'
         self.urn_main = '/bpapi/rest/'
         self.urn_edge = '/edge/rest/'
