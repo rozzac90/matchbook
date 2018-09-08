@@ -160,7 +160,7 @@ class MarketData(BaseEndpoint):
         else:
             response = self.request(
                 'GET', self.client.urn_edge, method, params=params, target='runners', session=session
-            )
+            ).json()
         return self.process_response(response, resources.Runner, date_time_sent, datetime.datetime.utcnow())
 
     def get_popular_markets(self, price_depth=3, side=Side.All, minimum_liquidity=None,
