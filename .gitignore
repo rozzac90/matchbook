@@ -1,7 +1,6 @@
 .idea/
 *.cache/
 *__pycache__*
-*.ipynb*
 *.pyc
 
 build/
