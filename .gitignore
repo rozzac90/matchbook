@@ -8,3 +8,7 @@ dist/
 matchbook.egg-info/
 *.log
 *.html
+
+/.python-version
+/Pipfile
+/Pipfile.lock
