@@ -368,3 +368,10 @@ class AggregationType:
     Average = 'average'
     Summary = 'summary'
     Default = Average
+
+
+class SportType:
+    """
+    Types of sports.
+    """
+    Sport = "SPORT"
