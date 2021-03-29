@@ -4,7 +4,7 @@ from matchbook import endpoints
 
 class APIClient(BaseClient):
 
-    def __init__(self, username, password=None):
+    def __init__(self, username=None, password=None):
         super(APIClient, self).__init__(username, password)
 
         self.login = endpoints.Login(self)

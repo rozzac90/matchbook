@@ -7,7 +7,7 @@ from matchbook.enums import ExchangeType, OddsType, Currency
 
 class BaseClient(object):
 
-    def __init__(self, username, password=None, locale=None):
+    def __init__(self, username=None, password=None, locale=None):
         """
         :param username: Matchbook username.
         :param password: Password for supplied username, if None will look in for MATCHBOOK_PW in env variables.
@@ -25,6 +25,7 @@ class BaseClient(object):
         self.exchange_type = ExchangeType.BackLay
         self.odds_type = OddsType.Decimal
         self.currency = Currency.EUR
+        self.get_username()
         self.get_password()
 
     def set_session_token(self, session_token, user_id):
@@ -45,6 +46,17 @@ class BaseClient(object):
                 self.password = os.environ.get('MATCHBOOK_PW')
             else:
                 raise PasswordError()
+
+    def get_username(self):
+        """If password is not provided will look in environment
+        variables for username+'password'
+        """
+        if self.username is None:
+            if os.environ.get('MATCHBOOK_USER'):
+                self.username = os.environ.get('MATCHBOOK_USER')
+            else:
+                raise PasswordError()
+
 
     @property
     def headers(self):

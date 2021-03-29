@@ -38,7 +38,7 @@ def clean_locals(params):
     :rtype: dict
     """
     clean_params = dict((k, v) for k, v in params.items() if v is not None and k != 'self' and k != 'session')
-    for k, v in clean_params.items():
+    for k, v in list(clean_params.items()):
         if '_' in k:
             new_key = k.replace('_', '-')
             clean_params[new_key] = v
