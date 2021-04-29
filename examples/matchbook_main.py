@@ -4,6 +4,7 @@ import json
 import matchbook
 from matchbook import APIClient
 from matchbook.enums import Side
+from matchbook.enums import Boolean
 import time
 import xlwings as xw
 import json
@@ -82,6 +83,11 @@ if oapp == '':
 else:
     pprint('Spreadsheet exists. Appkey = ' + str(oapp))
 
+starttime=time.time()
+refreshtime = time.time()
+keep_going = True
+runner_list = []
+
 mb = APIClient()
 #mb = APIClient(configuration['auth']['login'],configuration['auth']['login'])
 mb.login()
@@ -92,7 +98,10 @@ print(str(mb.login))
 #sports = mb.reference_data.get_sports()
 #print(json.dumps(balance, indent=4))
 horses_id = 24735152712200
-horse_events = mb.market_data.get_events(sport_ids=horses_id, include_event_participants='false')
+horse_events = mb.market_data.get_events(sport_ids=horses_id, include_event_participants=Boolean.F,
+                                         before=(int(starttime + 3600*24)), after=(int(starttime - 3600)))
+#pprint(horse_events)
+
 country_events = []
 for i in horse_events:
     if i['meta-tags'][4]['name'] == 'UK Ireland' and i['status'] == 'open':
@@ -100,20 +109,20 @@ for i in horse_events:
 
 pprint(country_events)
 next_event_id = country_events[0][0]
-print(str(country_events[0][1] + country_events[0][2]))
+print(str(country_events[0][1] + ' Next race is - ' + country_events[0][2]))
 
 betsPlaced = ''
 old_market_id = ''
 #horses_id = [s['id'] for s in sports if s['name']=='Horse Racing'][0]
 #print(str(horses_id))
 
-starttime=time.time()
-refreshtime = time.time()
-keep_going = True
-runner_list = []
+
 while keep_going:
     timenow = time.time()
-    mb.keep_alive()
+    try:
+        mb.keep_alive()
+    except:
+        pass
 # refresh connection to Smarkets every 20 minutes
     if timenow-starttime>1200:
         try:
@@ -131,7 +140,8 @@ while keep_going:
 
     if len(runner_list) > 0:
         oTime = int(time.time())
-        horse_events = mb.market_data.get_events(sport_ids=horses_id, include_event_participants='false', after=oTime)
+        horse_events = mb.market_data.get_events(sport_ids=horses_id, include_event_participants=Boolean.F,
+                                                 before=(int(starttime + (3600))), after=(int(starttime - 3600)))
         #print(json.dumps(horse_events, indent=4))
         country_events = []
         for i in horse_events:
@@ -187,12 +197,12 @@ while keep_going:
                     BackOrLay = Side.Back
                     # to place £10 bet...
                     amount = 2
-                    price = int(runner_list[k][2])
+                    price = runner_list[k][2]
                 #                quantity = int((amount * 100000000) / price)
                 else:
                     BackOrLay = Side.Lay
-                    amount = 2
-                    price = int(runner_list[k][2])
+                    amount = (2/(runner_list[k][2] -1))
+                    price = runner_list[k][2]
                 #                quantity = int((amount * 100000000) / price)
                 # price = str(runner_list[k][2])
                 #                        price = 10
@@ -201,7 +211,10 @@ while keep_going:
                 try:
                     if betsPlaced != next_market_id:
                         order_submit = mb.betting.send_orders(runner_id, price, BackOrLay, amount)
-                        print(str(order_submit))
+#                        print(str(order_submit))
+                        print(str(order_submit[0]['market-name']) + ' - ' + str(
+                            order_submit[0]['event-name']) + ' - ' + str(order_submit[0]['runner-name']) + ' - '
+                              + str(order_submit[0]['side']) + ' - ' + str(order_submit[0]['odds']))
                         betsPlaced = 'True'
                     # client.place_order(
                     #     str(next_market_id),  # market id
