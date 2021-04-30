@@ -196,12 +196,12 @@ while keep_going:
                 if runner_list[k][1] == 'buy':
                     BackOrLay = Side.Back
                     # to place £10 bet...
-                    amount = 2
+                    amount = 4
                     price = runner_list[k][2]
                 #                quantity = int((amount * 100000000) / price)
                 else:
                     BackOrLay = Side.Lay
-                    amount = (2/(runner_list[k][2] -1))
+                    amount = (4/(runner_list[k][2] -1))
                     price = runner_list[k][2]
                 #                quantity = int((amount * 100000000) / price)
                 # price = str(runner_list[k][2])
