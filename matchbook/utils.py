@@ -38,12 +38,14 @@ def clean_locals(params):
     :rtype: dict
     """
     clean_params = dict((k, v) for k, v in params.items() if v is not None and k != 'self' and k != 'session')
+    new_clean_params = {}
     for k, v in clean_params.items():
         if '_' in k:
             new_key = k.replace('_', '-')
-            clean_params[new_key] = v
-            clean_params.pop(k)
-    return clean_params
+            new_clean_params[new_key] = v
+        else:
+            new_clean_params[k] = v
+    return new_clean_params
 
 
 def check_call_complete(response):
