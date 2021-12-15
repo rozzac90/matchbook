@@ -16,7 +16,7 @@ from pprint import pprint
 import sys
 from time import sleep
 import datetime
-
+from datetime import datetime, timedelta
 
 def substring_after(s, delim):
     ostr = s.partition(delim)[2]
@@ -54,10 +54,10 @@ def get_excel_runners():
         #    print(rng[i][1])
         if (rng[i][16] == 'BACKSP' or rng[i][16] == 'BACK-SP' or rng[i][16] == 'BACK') and racestart > -1:
             #        print(rng[i][0],rng[i][16],rng[i][6])
-            runner_list.append([rng[i][0], 'buy', rng[i][7]])
+            runner_list.append([rng[i][0], 'buy', rng[i][5]])
             j = j + 1
         elif (rng[i][16] == 'LAYSP' or rng[i][16] == 'LAY-SP' or rng[i][16] == 'LAY') and racestart > -1:
-            runner_list.append([rng[i][0], 'sell', rng[i][5]])
+            runner_list.append([rng[i][0], 'sell', rng[i][7]]) # To lay at current back price, enter 5, or to take current ask price enter 7
             j = j + 1
 
     #        runner_list.append({'name': rng[i][0], 'BackOrLay': rng[i][16], 'price': rng[i][5]})
@@ -76,7 +76,9 @@ def Put_Matchbook_Runners(oRunners):
     for i in range(len(oRunners)):
         sht.range('A5').value = oRunners
 
-spreadsheet = 'BA Template Betdaq - Dogs.xlsm'
+
+#######__start__########
+spreadsheet = 'BA Template - Dogs.xlsm'
 oapp = check_exists(spreadsheet)
 if oapp == '':
     pprint('Spreadsheet not open - Aborting')
@@ -103,7 +105,10 @@ greyhounds_id = 241798357140019
 horse_events = mb.market_data.get_events(sport_ids=greyhounds_id, include_event_participants=Boolean.F,
                                          before=(int(starttime + 3600*24)), after=(int(starttime - 3600)))
 #pprint(horse_events)
-
+start_balance = mb.account.get_account()
+start_balance = start_balance['balance']
+new_balance = 0
+print("Start Balance = " + str(start_balance))
 country_events = []
 for i in horse_events:
  #   if i['meta-tags'][4]['name'] == 'UK Ireland' and i['status'] == 'open':
@@ -126,10 +131,24 @@ while keep_going:
     except:
         pass
 # refresh connection to Smarkets every 20 minutes
-    if timenow-starttime>1200:
+    now = datetime.now()
+    if now.strftime("%H") >= "10" and new_balance!=start_balance:
+        new_balance = mb.account.get_account()
+        new_balance = new_balance['balance']
+        print("Balance " + str(now) + " = " + str(new_balance))
+        start_balance = new_balance
+
+#    print(str(timenow-starttime))
+    if timenow-starttime>1200 and now.strftime("%H") >= "10" and now.strftime("%H") <= "22":
         try:
             mb.keep_alive()
             starttime = time.time()
+            cur_balance = mb.account.get_account()
+            cur_balance = cur_balance['balance']
+            if start_balance !=cur_balance:
+                PandL = round(cur_balance-start_balance,2)
+                print(f'                    Current balance = {cur_balance}; P&L Today = {PandL}')
+
         except:
             pass
 
@@ -145,42 +164,47 @@ while keep_going:
         horse_events = mb.market_data.get_events(sport_ids=greyhounds_id, include_event_participants=Boolean.F,
                                                  before=(int(starttime + (3600))), after=(int(starttime - 3600)))
         #print(json.dumps(horse_events, indent=4))
-        country_events = []
-        for i in horse_events:
-#             if i['meta-tags'][4]['name'] == 'UK Ireland' and i['status'] == 'open':
-              country_events.append([i['id'], i['start'], i['name']])
-        #event_ids = ','.join(str(d['id']) for d in horse_events)
-#        print(str(country_events))
-        #event_ids = [val['id'] for val in horse_events]
+        if len(horse_events) > 0:
+            country_events = []
+            for i in horse_events:
+    #             if i['meta-tags'][4]['name'] == 'UK Ireland' and i['status'] == 'open':
+                  country_events.append([i['id'], i['start'], i['name']])
+            #event_ids = ','.join(str(d['id']) for d in horse_events)
+    #        print(str(country_events))
+            #event_ids = [val['id'] for val in horse_events]
 
-        next_event_id = country_events[0][0]
-#        print(next_event_id)
+            try:
+                 next_event_id = country_events[0][0]
+        #        print(next_event_id)
+            except:
+                pass
 
-        next_event_detail = mb.market_data.get_events(event_id=next_event_id, include_event_participants='false')
+            next_event_detail = mb.market_data.get_events(event_id=next_event_id, include_event_participants='false')
 
-        #next_market_id = [s['markets']['id'] for s in next_event_detail if s['markets']['name']=='WIN'][0]
-        #print(json.dumps(next_event_detail, indent=4))
-        for i in next_event_detail['markets']:
-            if i['name'] == 'WIN':
-                next_market_id = i['id']
+            #next_market_id = [s['markets']['id'] for s in next_event_detail if s['markets']['name']=='WIN'][0]
+            #print(json.dumps(next_event_detail, indent=4))
+            for i in next_event_detail['markets']:
+                if i['name'] == 'WIN':
+                    next_market_id = i['id']
 
-        if next_market_id != old_market_id:
-            print(str(next_market_id) + " - " + str(country_events[0][2]))
-            old_market_id = next_market_id
+            if next_market_id != old_market_id:
+                print(str(next_market_id) + " - " + str(country_events[0][2]))
+                old_market_id = next_market_id
 
-        oContracts = mb.market_data.get_runners(next_event_id, next_market_id)
-#        runner_id = oContracts['runners'][0]['id']
-        #order_submit = mb.betting.send_orders(runner_id,5,Side.Back, 2)
-        #print(str(order_submit))
-        #print(json.dumps(oContracts, indent=4))
+                oContracts = mb.market_data.get_runners(next_event_id, next_market_id)
+    #        runner_id = oContracts['runners'][0]['id']
+            #order_submit = mb.betting.send_orders(runner_id,5,Side.Back, 2)
+            #print(str(order_submit))
+            #print(json.dumps(oContracts, indent=4))
 
-        #print(str(runner_id))
+            #print(str(runner_id))
 
-        oRunners = []
-        for k in oContracts['runners']:
-            #print(k['name'].lstrip('0123456789.- ') + "  " + str(k['id']) + "   " + str(k['prices'][0]['decimal-odds']))
-            if k['withdrawn'] != True:
-                oRunners.append([k['name'].lstrip('0123456789.- '),str(k['id'])])
+            oRunners = []
+            for k in oContracts['runners']:
+                #print(k['name'].lstrip('0123456789.- ') + "  " + str(k['id']) + "   " + str(k['prices'][0]['decimal-odds']))
+                if k['withdrawn'] != True:
+                    oRunners.append([k['name'].lstrip('0123456789.- '),str(k['id'])])
+
 
  #       print(oRunners)
 
@@ -198,12 +222,12 @@ while keep_going:
                 if runner_list[k][1] == 'buy':
                     BackOrLay = Side.Back
                     # to place £10 bet...
-                    amount = 2
+                    amount = 4
                     price = runner_list[k][2]
                 #                quantity = int((amount * 100000000) / price)
                 else:
                     BackOrLay = Side.Lay
-                    amount = (2/(runner_list[k][2] -1))
+                    amount = (5/(runner_list[k][2] -1))
                     price = runner_list[k][2]
                 #                quantity = int((amount * 100000000) / price)
                 # price = str(runner_list[k][2])

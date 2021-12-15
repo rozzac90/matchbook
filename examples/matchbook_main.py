@@ -1,21 +1,14 @@
-import xlwings as xw
-import os
-import json
-import matchbook
 from matchbook import APIClient
 from matchbook.enums import Side
 from matchbook.enums import Boolean
 import time
 import xlwings as xw
-import json
-import json
-import logging
-from logging.config import fileConfig
 from pprint import pprint
 import sys
-from time import sleep
-import datetime
+from datetime import datetime, timedelta
+from twilio.rest import Client
 
+client = Client("AC838779119d6a0fb49d121f539854fb98","ba59e17b80f0caebe226ba7928b13b34")
 
 def substring_after(s, delim):
     ostr = s.partition(delim)[2]
@@ -34,17 +27,12 @@ def check_exists(self):
     return xlapp
 
 def get_excel_runners():
-    #    oapp = xw.apps.active
-    #    okey = xw.apps.keys()
-    #    wb = xw.apps[oapp].books.open(r'F:/Users/Oliver.Home64bit/Documents/BA/2020/270320 - D.xlsm')
     wb = xw.apps(oapp).books(spreadsheet)
     #    wb = xw.apps[xlapp].books[spreadsheet]
     sht = wb.sheets['Sheet1']
     rng = sht.range('a5', 'Q50').value
     race = sht.range('a1').value
     racestart = sht.range('ac2').value
-    #    print(race)
-    # print(rng[0][1])
     i = 0
     j = 0
     runner_list = []
@@ -59,22 +47,17 @@ def get_excel_runners():
             runner_list.append([rng[i][0], 'sell', rng[i][5]])
             j = j + 1
 
-    #        runner_list.append({'name': rng[i][0], 'BackOrLay': rng[i][16], 'price': rng[i][5]})
-    #        runner_list.update({'horses': {'name': rng[i][0], 'BackOrLay': rng[i][16], 'price': rng[i][5]}})
-    # runner_list.append['name': rng[i][0],'BackOrLay': rng[i][16],'price': rng[i][5]]
-    # a = np.array(runner_list)
-    # print(runner_list)
-    # if 'BACK' in rng
-    # if len(runner_list) > 0:
-
     return runner_list, race
 
 def Put_Matchbook_Runners(oRunners):
     wb = xw.apps(oapp).books(spreadsheet)
     sht = wb.sheets['Matchbook']
+    sht.range('A1').value = next_race
     for i in range(len(oRunners)):
         sht.range('A5').value = oRunners
 
+
+#spreadsheet = 'Matchbook test.xlsm'
 spreadsheet = 'BA Template - Horses Win and place 23.10.20.xlsm'
 oapp = check_exists(spreadsheet)
 if oapp == '':
@@ -87,106 +70,128 @@ starttime=time.time()
 refreshtime = time.time()
 keep_going = True
 runner_list = []
-
+horse_events = []
 mb = APIClient()
 #mb = APIClient(configuration['auth']['login'],configuration['auth']['login'])
 mb.login()
 print(str(mb.login))
-
-
-#balance = mb.account.get_account()
-#sports = mb.reference_data.get_sports()
-#print(json.dumps(balance, indent=4))
+start_balance = mb.account.get_account()
+print("Start Balance = " + str(start_balance['balance']))
 horses_id = 24735152712200
-horse_events = mb.market_data.get_events(sport_ids=horses_id, include_event_participants=Boolean.F,
-                                         before=(int(starttime + 3600*24)), after=(int(starttime - 3600)))
-#pprint(horse_events)
-
 country_events = []
-for i in horse_events:
-    if i['meta-tags'][4]['name'] == 'UK Ireland' and i['status'] == 'open':
-        country_events.append([i['id'], i['start'], i['name']])
-
-pprint(country_events)
-next_event_id = country_events[0][0]
-print(str(country_events[0][1] + ' Next race is - ' + country_events[0][2]))
-
+upcoming_events = []
 betsPlaced = ''
+next_market_id =''
+next_event_id = ''
+next_race_start = datetime.utcnow() - timedelta(seconds=10)
 old_market_id = ''
-#horses_id = [s['id'] for s in sports if s['name']=='Horse Racing'][0]
-#print(str(horses_id))
-
+old_race = ''
+next_race = ''
+oldBFrace = ''
+race = ''
+pattern = '%d.%m.%Y %H:%M:%S'
 
 while keep_going:
     timenow = time.time()
+    now = datetime.now()
+# refresh connection to matchbook every hour minutes
+    if timenow-starttime>3600:
+         try:
+             mb.keep_alive()
+             starttime = time.time()
+         except:
+             pass
+
+    if horse_events==[] and now.strftime("%H") >= "10" and now.strftime("%H") <= "20":
+        horse_events = mb.market_data.get_events(sport_ids=horses_id, include_event_participants=Boolean.F,
+                                                 before=(int(starttime + 3600 * 12)), after=int(time.time() - 10))
+#        horse_events = [i for i in horse_events if i['meta-tags'][4]['name'] == 'UK Ireland' and i['status'] == 'open'\
+#                        and i['markets'][0]['name'] == 'WIN']
+        horse_events = [i for i in horse_events if i['status'] == 'open'\
+                        and i['markets'][0]['name'] == 'WIN']
+        print("horse_events refreshed..." + str(datetime.now().time()))
+        start_balance = mb.account.get_account()
+        print("Start Balance = " + str(start_balance['balance']))
+#        pprint(horse_events)
+#    print(next_race_start)
+#    print(datetime.datetime.now().isoformat())
     try:
-        mb.keep_alive()
+        old_race = next_race
+        dtnow = datetime.utcnow().isoformat()
+        horse_events = [i for i in horse_events if i['start'] > datetime.utcnow().isoformat()]
+        if next_race_start < datetime.utcnow() or len(horse_events)==1:
+            for i in horse_events:
+ #              if i['meta-tags'][4]['name'] == 'UK Ireland' and i['status'] == 'open' \
+ #                      and i['markets'][0]['name']=='WIN' and i['start'] > datetime.utcnow().isoformat():
+ #               if i['start'] > datetime.utcnow().isoformat():
+                next_race = [i['id'], i['start'], i['name']]
+ #           next_race = [horse_events[0]['id'], horse_events[0]['start'], horse_events[0]['name']]
+                upcoming_events = []
+                if old_race != next_race:
+                    for horses in horse_events:
+                        upcoming_events.append([horses['id'], horses['start'], horses['name']])
+
+                    balance = mb.account.get_account()
+                    cur_balance = "Balance = " + str(round(balance['balance'],2)) + "  - Daily P&L = " + str(balance['balance']-start_balance['balance'])
+                    print("Balance = " + str(balance['balance']) + "  - Daily P&L = " + str(balance['balance']-start_balance['balance']))
+
+                    next_event_id = i['id']
+                    next_market_id = i['markets'][0]['id']
+                    old_race = next_race
+    #                    Put_Matchbook_Runners([])
+                    next_race_start = datetime.fromisoformat(i['start'].rstrip('Z'))
+                    print("Next Matchbook race is - " + str(next_race) + " starts at " + str(next_race_start))
+                    print("next_event_id= " + str(next_event_id) + ", next_market_id= " + str(next_market_id))
+    #                    horse_events.remove(i)
+    #                       client.messages.create(to="+447946620083", from_="+18082016144", body=cur_balance)
+                break
+#                    upcoming_events.remove(i)
+
+#            if len(upcoming_events) > 0:
+#            print(pprint(upcoming_events), str(dtnow))
+#            pprint(dtnow)
+#            upcoming_events = []
     except:
         pass
-# refresh connection to Smarkets every 20 minutes
-    if timenow-starttime>1200:
+
+    if len(upcoming_events)>0:
         try:
-            mb.keep_alive()
-            starttime = time.time()
+            oldBFrace = race
+            runner_list, race = get_excel_runners()
+            if oldBFrace!=race:
+                print("Next Betfair race is - " + str(race))
+                oldBFrace = race
+
         except:
             pass
-
-    try:
-        runner_list, race = get_excel_runners()
-    except:
-        pass
-
 #print(str(runner_list))
 
     if len(runner_list) > 0:
-        oTime = int(time.time())
-        horse_events = mb.market_data.get_events(sport_ids=horses_id, include_event_participants=Boolean.F,
-                                                 before=(int(starttime + (3600))), after=(int(starttime - 3600)))
-        #print(json.dumps(horse_events, indent=4))
-        country_events = []
-        for i in horse_events:
-             if i['meta-tags'][4]['name'] == 'UK Ireland' and i['status'] == 'open':
-                 country_events.append([i['id'], i['start'], i['name']])
-        #event_ids = ','.join(str(d['id']) for d in horse_events)
-#        print(str(country_events))
-        #event_ids = [val['id'] for val in horse_events]
+#        try:
+            oTime = int(time.time())
+            if next_market_id != old_market_id:
+    #            print(str(next_market_id) + " - " + str(country_events[0][2]))
+                old_market_id = next_market_id
+            oContracts = []
+            print("mb.market_data.get_runners(" + str(next_event_id) + ", " + str(next_market_id) + ")" )
+            oContracts = mb.market_data.get_runners(next_event_id, next_market_id)
+    #        pprint(oContracts)
+            oRunners = []
+            for k in oContracts['runners']:
+                #print(k['name'].lstrip('0123456789.- ') + "  " + str(k['id']) + "   " + str(k['prices'][0]['decimal-odds']))
+                if k['withdrawn'] != True:
+                    mylist = [k['name'].lstrip('0123456789.- '), str(k['id'])]
+                    # for j in k['prices']:
+                    #     mylist.append(j['odds'])
+                    oRunners.append(mylist)
+#        except:
+#            pass
 
-        next_event_id = country_events[0][0]
-#        print(next_event_id)
-
-        next_event_detail = mb.market_data.get_events(event_id=next_event_id, include_event_participants='false')
-
-        #next_market_id = [s['markets']['id'] for s in next_event_detail if s['markets']['name']=='WIN'][0]
-        #print(json.dumps(next_event_detail, indent=4))
-        for i in next_event_detail['markets']:
-            if i['name'] == 'WIN':
-                next_market_id = i['id']
-
-        if next_market_id != old_market_id:
-            print(str(next_market_id) + " - " + str(country_events[0][2]))
-            old_market_id = next_market_id
-
-        oContracts = mb.market_data.get_runners(next_event_id, next_market_id)
-#        runner_id = oContracts['runners'][0]['id']
-        #order_submit = mb.betting.send_orders(runner_id,5,Side.Back, 2)
-        #print(str(order_submit))
-        #print(json.dumps(oContracts, indent=4))
-
-        #print(str(runner_id))
-
-        oRunners = []
-        for k in oContracts['runners']:
-            #print(k['name'].lstrip('0123456789.- ') + "  " + str(k['id']) + "   " + str(k['prices'][0]['decimal-odds']))
-            if k['withdrawn'] != True:
-                oRunners.append([k['name'].lstrip('0123456789.- '),str(k['id'])])
-
- #       print(oRunners)
+        #       print(oRunners)
+#        Put_Matchbook_Runners(oRunners)
 
     for k in range(len(runner_list)):
         for y in oRunners:
-    #        print(runner_list[k][0] + ' ' + y[0])
-    #        print(substring_after((str(runner_list[k][0]).lower()).replace("'", ""), ".") + '  ' + str(
-    #                str(y[0]).lower()).replace("'", ""))
             if substring_after((str(runner_list[k][0]).lower()).replace("'", ""), ".") == str(
                     str(y[0]).lower()).replace("'", ""):
                 oexists = 1
@@ -196,17 +201,12 @@ while keep_going:
                 if runner_list[k][1] == 'buy':
                     BackOrLay = Side.Back
                     # to place £10 bet...
-                    amount = 4
+                    amount = 5
                     price = runner_list[k][2]
-                #                quantity = int((amount * 100000000) / price)
                 else:
                     BackOrLay = Side.Lay
-                    amount = (4/(runner_list[k][2] -1))
+                    amount = (5/(runner_list[k][2] -1))
                     price = runner_list[k][2]
-                #                quantity = int((amount * 100000000) / price)
-                # price = str(runner_list[k][2])
-                #                        price = 10
-                #                        stake = 20000000
 
                 try:
                     if betsPlaced != next_market_id:
@@ -216,26 +216,20 @@ while keep_going:
                             order_submit[0]['event-name']) + ' - ' + str(order_submit[0]['runner-name']) + ' - '
                               + str(order_submit[0]['side']) + ' - ' + str(order_submit[0]['odds']))
                         betsPlaced = 'True'
-                    # client.place_order(
-                    #     str(next_market_id),  # market id
-                    #     str(contract_id),  # contract id
-                    #     price,
-                    #     quantity,
-                    #     #                           50,  # percentage price * 10**4, here: 0.5% / 200 decimal / 19900 american
-                    #     #                            500000,  # quantity: total stake * 10**4, here: 50 GBP. Your buy order locks 0.25 GBP, as
-                    #     #      0.25 GBP * 200 = 50 GBP
-                    #     BackOrLay,  # order side: buy or sell
-                    # )
+
                 except:
                     pass
 
     if betsPlaced == 'True':
         betsPlaced = next_market_id
 
-        time.sleep(2)
+        time.sleep(1)
 
     else:
-        time.sleep(2)
+        if len(upcoming_events) > 0:
+            time.sleep(1)
+        else:
+            time.sleep(3600)
 
 
 #    Put_Matchbook_Runners(oRunners)
